@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${deuda.id_deuda != null} ? 'Editar Deuda' : 'Nueva Deuda'"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow border-0">
+                    <div class="card-header bg-success text-white py-3">
+                        <h4 class="mb-0 text-center" th:text="${deuda.id_deuda != null} ? 'Actualizar Datos de Deuda' : 'Registrar Nueva Deuda'"></h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/deudas/guardar}" th:object="${deuda}" method="post">
+                            
+                            <input type="hidden" th:field="*{id_deuda}" id="idDeuda">
+                            <input type="hidden" th:field="*{monto_pagado}">
+                            <input type="hidden" th:field="*{estado}">
+                            <input type="hidden" th:field="*{fecha_emision}">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Proveedor</label>
+                                <select th:field="*{proveedor.id_proveedor}" class="form-select" th:disabled="${deuda.id_deuda != null}" required>
+                                    <option value="">-- Seleccionar Proveedor --</option>
+                                    <option th:each="p : ${proveedores}" th:value="${p.id_proveedor}" th:text="${p.nombre}"></option>
+                                </select>
+                                <input type="hidden" th:if="${deuda.id_deuda != null}" th:field="*{proveedor.id_proveedor}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Monto Total ($)</label>
+                                <input type="number" step="0.01" th:field="*{monto_total}" class="form-control" 
+                                       th:min="${deuda.monto_pagado}" required>
+                                <div th:if="${deuda.id_deuda != null}" class="form-text text-muted">
+                                    No puede ser menor a lo ya pagado: <strong th:text="'$' + ${deuda.monto_pagado}"></strong>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Fecha de Vencimiento</label>
+                                <input type="datetime-local" th:field="*{fecha_vencimiento}" id="fechaVenc" class="form-control" required>
+                                
+                                <div class="text-danger small fw-bold mt-1" 
+                                    th:if="${#fields.hasErrors('fecha_vencimiento')}" 
+                                    th:errors="*{fecha_vencimiento}">
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-success fw-bold">GUARDAR INFORMACIÓN</button>
+                                <a th:href="@{/deudas}" class="btn btn-outline-secondary">Cancelar</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputFecha = document.getElementById('fechaVenc');
+            const idDeuda = document.getElementById('idDeuda').value;
+
+            // Solo aplicamos la restricción si es una DEUDA NUEVA (id vacío)
+            // Si estamos editando, permitimos ver/mantener la fecha que ya tenía
+            if (!idDeuda) {
+                const ahora = new Date();
+                
+                // Ajustar a la zona horaria local para el formato ISO
+                const offset = ahora.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(ahora - offset)).toISOString().slice(0, 16);
+                
+                inputFecha.min = localISOTime;
+                
+                // Opcional: Si el campo está vacío, poner la fecha actual por defecto
+                if (!inputFecha.value) {
+                    inputFecha.value = localISOTime;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

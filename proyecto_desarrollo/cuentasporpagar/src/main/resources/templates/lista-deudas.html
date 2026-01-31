@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Cuentas por Pagar</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .badge-pendiente { background-color: #dc3545; color: #fff; } 
+        .badge-parcial { background-color: #ffc107; color: #000; }  
+        .badge-pagado { background-color: #198754; color: #fff; }    
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .table thead { background-color: #212529; color: white; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-primary fw-bold">📋 Control de Cuentas por Pagar</h2>
+            <div class="btn-group shadow-sm">
+                <a th:href="@{/deudas/nueva}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nueva Deuda
+                </a>
+                <a th:href="@{/proveedores}" class="btn btn-primary">
+                    <i class="bi bi-people"></i> Proveedores
+                </a>
+                <a th:href="@{/login}" class="btn btn-outline-danger ms-2">Cerrar Sesión</a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-body row">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">Filtrar por Proveedor:</label>
+                    <select class="form-select" id="filtroProveedor">
+                        <option value="">-- Todos los Proveedores --</option>
+                        <option th:each="p : ${proveedores}" th:value="${p.nombre}" th:text="${p.nombre}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">Mes de Vencimiento:</label>
+                    <input type="month" class="form-control" id="filtroMes">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary w-100 fw-bold" onclick="aplicarFiltros()">🔍 Aplicar Filtros</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive shadow-sm rounded bg-white">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>Vencimiento</th>
+                        <th>Total</th>
+                        <th>Pagado</th>
+                        <th>Saldo</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDeudas">
+                    <tr th:each="d : ${deudas}">
+                        <td class="fw-bold" th:text="${d.proveedor.nombre}"></td>
+                        <td th:text="${#temporals.format(d.fecha_vencimiento, 'dd/MM/yyyy')}"></td>
+                        <td class="fw-bold text-dark" th:text="'$' + ${#numbers.formatDecimal(d.monto_total, 1, 2)}"></td>
+                        <td class="text-primary" th:text="'$' + ${#numbers.formatDecimal(d.monto_pagado != null ? d.monto_pagado : 0.0, 1, 2)}"></td>
+                        <td class="text-danger fw-bold" 
+                            th:text="'$' + ${#numbers.formatDecimal(d.monto_total - (d.monto_pagado != null ? d.monto_pagado : 0.0), 1, 2)}"></td>
+                        
+                        <td class="text-center">
+                            <span class="badge" 
+                                  th:classappend="${d.estado == 'Pendiente' ? 'badge-pendiente' : (d.estado == 'Parcial' ? 'badge-parcial' : 'badge-pagado')}" 
+                                  th:text="${d.estado}"></span>
+                        </td>
+                        
+                        <td class="text-center">
+                            <a th:if="${d.estado != 'Pagada'}" 
+                               th:href="@{/pagos/nuevo/{id}(id=${d.id_deuda})}" 
+                               class="btn btn-sm btn-success" title="Registrar Pago">
+                               💰
+                            </a>
+                            
+                            <a th:href="@{/deudas/editar/{id}(id=${d.id_deuda})}" 
+                               class="btn btn-sm btn-warning ms-1" title="Editar Monto/Fecha">
+                               <i class="bi bi-pencil-square"></i>
+                            </a>
+                            
+                            <a th:href="@{/pagos/historial/{id}(id=${d.id_deuda})}" 
+                               class="btn btn-sm btn-outline-info ms-1" title="Ver Historial">
+                                <i class="bi bi-clock-history"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function aplicarFiltros() {
+            const proveedorSeleccionado = document.getElementById('filtroProveedor').value.toLowerCase();
+            const mesSeleccionado = document.getElementById('filtroMes').value; 
+            const filas = document.querySelectorAll('#tablaDeudas tr');
+
+            filas.forEach(fila => {
+                const nombreProvFila = fila.cells[0].innerText.toLowerCase();
+                const fechaVencFila = fila.cells[1].innerText;
+                const partes = fechaVencFila.split('/');
+                const mesAnioFila = `${partes[2]}-${partes[1]}`;
+
+                let mostrar = true;
+                if (proveedorSeleccionado && !nombreProvFila.includes(proveedorSeleccionado)) mostrar = false;
+                if (mesSeleccionado && mesAnioFila !== mesSeleccionado) mostrar = false;
+
+                fila.style.display = mostrar ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
