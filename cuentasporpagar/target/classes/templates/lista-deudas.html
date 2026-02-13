@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Cuentas por Pagar</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .badge-pendiente { background-color: #dc3545; color: #fff; } 
+        .badge-parcial { background-color: #ffc107; color: #000; }  
+        .badge-pagado { background-color: #198754; color: #fff; }    
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .table thead { background-color: #212529; color: white; }
+        .card-filter { border-radius: 12px; border: none; }
+        .btn-volver { border-radius: 10px; transition: all 0.3s; }
+        .btn-volver:hover { transform: translateX(-5px); }
+        /* Estilo opcional para que el rojo no sea tan fuerte */
+        .table-danger { --bs-table-bg: #f8d7da; --bs-table-color: #842029; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary fw-bold mb-0">📋 Control de Cuentas por Pagar</h2>
+                <p class="text-muted small">Visualiza y gestiona el estado de tus deudas actuales</p>
+            </div>
+            <div>
+                <a th:href="@{/dashboard}" class="btn btn-dark shadow-sm px-4 btn-volver">
+                    <i class="bi bi-arrow-left-circle me-2"></i> Volver al Panel
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm card-filter mb-4">
+            <div class="card-body row">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">Filtrar por Proveedor:</label>
+                    <select class="form-select" id="filtroProveedor">
+                        <option value="">-- Todos los Proveedores --</option>
+                        <option th:each="p : ${proveedores}" th:value="${p.nombre}" th:text="${p.nombre}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">Mes de Vencimiento:</label>
+                    <input type="month" class="form-control" id="filtroMes">
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button class="btn btn-primary fw-bold flex-grow-1" onclick="aplicarFiltros()">🔍 Aplicar Filtros</button>
+                    <a th:href="@{/deudas/exportar-pdf}" id="btnExportarPdf" class="btn btn-danger fw-bold">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive shadow-sm rounded bg-white">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>Vencimiento</th>
+                        <th>Total</th>
+                        <th>Pagado</th>
+                        <th>Saldo</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDeudas">
+                    <tr th:each="d : ${deudas}" 
+                        th:classappend="${d.fecha_vencimiento.isBefore(T(java.time.LocalDateTime).now()) and d.estado != 'Pagada'} ? 'table-danger' : ''">
+                        
+                        <td class="fw-bold" th:text="${d.proveedor.nombre}"></td>
+                        <td th:text="${#temporals.format(d.fecha_vencimiento, 'dd/MM/yyyy')}"></td>
+                        <td class="fw-bold text-dark" th:text="'$' + ${#numbers.formatDecimal(d.monto_total, 1, 2)}"></td>
+                        <td class="text-primary" th:text="'$' + ${#numbers.formatDecimal(d.monto_pagado != null ? d.monto_pagado : 0.0, 1, 2)}"></td>
+                        <td class="text-danger fw-bold" 
+                            th:text="'$' + ${#numbers.formatDecimal(d.monto_total - (d.monto_pagado != null ? d.monto_pagado : 0.0), 1, 2)}"></td>
+                        
+                        <td class="text-center">
+                            <span class="badge" 
+                                  th:classappend="${d.estado == 'Pendiente' ? 'badge-pendiente' : (d.estado == 'Parcial' ? 'badge-parcial' : 'badge-pagado')}" 
+                                  th:text="${d.estado}"></span>
+                        </td>
+                        
+                        <td class="text-center">
+                            <a th:if="${d.estado != 'Pagada'}" 
+                               th:href="@{/pagos/nuevo/{id}(id=${d.id_deuda})}" 
+                               class="btn btn-sm btn-success" title="Registrar Pago">
+                               <i class="bi bi-cash-stack"></i>
+                            </a>
+                            
+                            <a th:if="${d.estado != 'Pagada'}"
+                               th:href="@{/deudas/editar/{id}(id=${d.id_deuda})}" 
+                               class="btn btn-sm btn-warning ms-1" title="Editar Monto/Fecha">
+                               <i class="bi bi-pencil-square"></i>
+                            </a>
+                            
+                            <a th:href="@{/pagos/historial/{id}(id=${d.id_deuda})}" 
+                               class="btn btn-sm btn-outline-info ms-1" title="Ver Historial">
+                                <i class="bi bi-clock-history"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function aplicarFiltros() {
+            const proveedorSeleccionado = document.getElementById('filtroProveedor').value.toLowerCase();
+            const mesSeleccionado = document.getElementById('filtroMes').value; 
+            const filas = document.querySelectorAll('#tablaDeudas tr');
+
+            filas.forEach(fila => {
+                const nombreProvFila = fila.cells[0].innerText.toLowerCase();
+                const fechaVencFila = fila.cells[1].innerText;
+                const partes = fechaVencFila.split('/');
+                const mesAnioFila = `${partes[2]}-${partes[1]}`;
+
+                let mostrar = true;
+                if (proveedorSeleccionado && !nombreProvFila.includes(proveedorSeleccionado)) mostrar = false;
+                if (mesSeleccionado && mesAnioFila !== mesSeleccionado) mostrar = false;
+
+                fila.style.display = mostrar ? '' : 'none';
+            });
+            const btnPdf = document.getElementById('btnExportarPdf');
+            const nuevaUrl = `/deudas/exportar-pdf?proveedor=${encodeURIComponent(proveedorSeleccionado)}&mes=${mesSeleccionado}`;
+            btnPdf.setAttribute('href', nuevaUrl);
+        }
+    </script>
+</body>
+</html>

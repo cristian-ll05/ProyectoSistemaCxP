@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión CPP | Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        /* Barra de usuario superior */
+        .user-bar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 10px 0;
+            margin-bottom: 30px;
+        }
+        /* Efecto de las tarjetas */
+        .card-action {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 15px;
+        }
+        .card-action:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+            background-color: #ffffff;
+        }
+        .display-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="user-bar shadow-sm">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="fw-bold text-primary">
+                <i class="bi bi-bank me-2"></i>Gestión CPP
+            </div>
+
+            <div class="d-flex align-items-center">
+                <div class="me-3 pe-3 border-end text-muted small">
+                    <i class="bi bi-person-circle me-1"></i>
+                    Usuario: <span class="fw-bold text-dark" sec:authentication="name">Invitado</span>
+                </div>
+                
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 fw-bold">
+                        <i class="bi bi-box-arrow-right"></i> Salir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <header class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-dark">Panel de Control</h1>
+            <p class="lead text-muted">Gestión de Cuentas por Pagar </p>
+            <hr class="w-25 mx-auto">
+        </header>
+
+        <div class="row g-4 justify-content-center">
+            
+            <div class="col-md-4">
+                <a th:href="@{/deudas/nueva}" class="card h-100 border-0 shadow-sm card-action text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-plus-circle-fill text-success display-icon"></i>
+                        <h3 class="h5 fw-bold">Nueva Deuda</h3>
+                        <p class="small text-muted">Registrar una nueva obligación pendiente con un proveedor.</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-4">
+                <a th:href="@{/proveedores}" class="card h-100 border-0 shadow-sm card-action text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill text-primary display-icon"></i>
+                        <h3 class="h5 fw-bold">Proveedores</h3>
+                        <p class="small text-muted">Administrar el catálogo de empresas y contactos.</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-4">
+                <a th:href="@{/deudas}" class="card h-100 border-0 shadow-sm card-action text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-file-earmark-bar-graph text-dark display-icon"></i>
+                        <h3 class="h5 fw-bold">Lista de Deudas</h3>
+                        <p class="small text-muted">Consultar saldos, aplicar filtros y exportar reportes PDF.</p>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
